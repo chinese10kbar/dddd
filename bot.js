@@ -1,164 +1,358 @@
-fx_version 'cerulean'
-games { 'gta5' }
-lua54 'yes'
-ui_page "ui/index.html"
-minify "yes"
+const { Client, Intents } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES] });
 
-files {
-    "cfg/client.lua",
-    "cfg/cfg_*.lua",
-    "cfg/events/cfg_*.lua",
-    "cfg/weapons.lua",
-    "cfg/blips_markers.lua",
-    "cfg/atms.lua",
-    "cfg/peds.meta",
-    "ui/index.html",
-    "ui/design.css",
-    "ui/main.js",
-    "ui/ProgressBar.js",
-    "ui/WPrompt.js",
-    "ui/RequestManager.js",
-    "ui/AnnounceManager.js",
-    "ui/Div.js",
-    "ui/dynamic_classes.js",
-    "ui/fonts/*.woff",
-    "ui/sounds/*",
-    "ui/index.css",
-    "ui/index.js",
-    "ui/SoundManager.js",
-    "ui/pnc/js/*.js",
-    "ui/pnc/css/*.css",
-    "ui/fortniteui/*",
-    "ui/fingerprintHacking/*",
-    "ui/playerlist_images/*.png",
-    "ui/killfeed/*",
-    "ui/pnc/components/*",
-    "ui/progress/*",
-    "ui/radios/*",
-    "ui/speedometer/*",
-    "ui/money/*",
-    "ui/radialmenu/*",
-    "ui/skin/*",
-    "ui/pma/*",
-    "audio/dlcvinewood_*.dat*",
-    "audio/sfx/dlc_vinewood/*.awc"
+const resourcePath = global.GetResourcePath ? global.GetResourcePath(global.GetCurrentResourceName()) : global.__dirname;
+require('dotenv').config({ path: path.join(resourcePath, './.env') });
+const settingsjson = require(resourcePath + '/settings.js');
+const statusLeaderboard = require(resourcePath + '/statusleaderboard.json');
+module.exports = client;
+
+client.path = resourcePath;
+client.ip = settingsjson.settings.ip;
+
+if (process.env.TOKEN === "" || process.env.TOKEN === "TOKEN") {
+    console.log(`Error! No Token Provided. You forgot to edit the .env`);
+    throw new Error('Whoops!');
 }
 
-shared_scripts {
-    "sharedcfg/*",
-    "shared/*.lua",
-    "pma/shared.lua"
-}
+client.on('ready', () => {
+    console.log(`Logged in as ${client.user.tag}! Players: ${GetNumPlayerIndices()}`);
+    console.log(`Your Prefix Is ${process.env.PREFIX}`);
+    client.user.setActivity(`${GetNumPlayerIndices()}/${GetConvarInt("sv_maxclients", 64)} players`, { type: 'WATCHING' });
+    client.user.setStatus('dnd');
+    init();
+});
 
-client_scripts {
-    "client_prod/cl_spawn.lua",
-    "rageui/RMenu.lua",
-    "rageui/menu/*.lua",
-    "rageui/components/*.lua",
-    "rageui/menu/elements/*.lua",
-    "rageui/menu/items/*.lua",
-    "rageui/menu/panels/*.lua",
-    "rageui/menu/windows/*.lua",
-    'pma/client/utils/*',
-    'pma/client/init/*.lua',
-    'pma/client/module/*.lua',
-    'pma/client/*.lua',
-    'dpclothing/*.lua',
-    "lib/*.lua",
-    "client_prod/*.lua",
-    "utils/cl_*.lua"
-}
-
-server_scripts {
-    'modules/ghmattimysql-server.js',
-    'modules/ghmattimysql-server.lua',
-    "lib/utils.lua",
-    "base.lua",
-    "modules/*.lua",
-    "cfg/discordroles.lua",
-    'pma/server/**/*.lua',
-    'pma/server/**/*.js',
-    "bot.js"
-}
-
-provides {
-    'mumble-voip',
-    'tokovoip',
-    'toko-voip',
-    'tokovoip_script'
-}
-
-server_exports {
-    "GetDiscordRoles",
-    "GetRoleIdFromRoleName",
-    "GetDiscordAvatar",
-    "GetDiscordName",
-    "IsDiscordEmailVerified",
-    "GetDiscordNickname",
-    "GetGuildIcon",
-    "GetGuildSplash",
-    "GetGuildName",
-    "GetGuildDescription",
-    "GetGuildMemberCount",
-    "GetGuildOnlineMemberCount",
-    "GetGuildRoleList",
-    "ResetCaches",
-    "CheckEqual",
-    "SetNickname",
-    'dmUser',
-    'storedm'
-}
-
-convar_category 'PMA-Voice' {
-    "PMA-Voice Configuration Options",
-    {
-        { "Use native audio", "$voice_useNativeAudio", "CV_BOOL", "false" },
-        { "Use 2D audio", "$voice_use2dAudio", "CV_BOOL", "false" },
-        { "Use sending range only", "$voice_useSendingRangeOnly", "CV_BOOL", "false" },
-        { "Enable UI", "$voice_enableUi", "CV_INT", "0" },
-        { "Enable F11 proximity key", "$voice_enableProximityCycle", "CV_INT", "1" },
-        { "Proximity cycle key", "$voice_defaultCycle", "CV_STRING", "F11" },
-        { "Voice radio volume", "$voice_defaultRadioVolume", "CV_INT", "30" },
-        { "Voice call volume", "$voice_defaultCallVolume", "CV_INT", "60" },
-        { "Enable radios", "$voice_enableRadios", "CV_INT", "1" },
-        { "Enable calls", "$voice_enableCalls", "CV_INT", "1" },
-        { "Enable submix", "$voice_enableSubmix", "CV_INT", "1" },
-        { "Enable radio animation", "$voice_enableRadioAnim", "CV_INT", "0" },
-        { "Radio key", "$voice_defaultRadio", "CV_STRING", "LALT" },
-        { "UI refresh rate", "$voice_uiRefreshRate", "CV_INT", "200" },
-        { "Allow players to set audio intent", "$voice_allowSetIntent", "CV_INT", "1" },
-        { "External mumble server address", "$voice_externalAddress", "CV_STRING", "" },
-        { "External mumble server port", "$voice_externalPort", "CV_INT", "0" },
-        { "Voice debug mode", "$voice_debugMode", "CV_INT", "0" },
-        { "Disable players being allowed to join", "$voice_externalDisallowJoin", "CV_INT", "0" },
-        { "Hide server endpoints in logs", "$voice_hideEndpoints", "CV_INT", "1" }
+client.on("guildMemberAdd", function (member) {
+    if (member.guild.id === settingsjson.settings.GuildID) {
+        try {
+            exports.mg.execute("SELECT * FROM `mg_verification` WHERE discord_id = ? AND verified = 1", [member.id], (result) => {
+                if (result.length > 0) {
+                    let role = member.guild.roles.cache.find(r => r.name === '[Verified]');
+                    if (role) {
+                        member.roles.add(role);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
     }
+});
+
+let onlinePD = 0;
+let onlineStaff = 0;
+let onlineNHS = 0;
+let serverStatus = "";
+let memberCount = 0;
+let currentFooterEmoji = '⚪';
+
+setInterval(() => {
+    currentFooterEmoji = currentFooterEmoji === "⚪" ? "⚫" : "⚪";
+}, 300);
+
+if (settingsjson.settings.StatusEnabled) {
+    setInterval(() => {
+        if (!client.guilds.cache.get(settingsjson.settings.GuildID)) {
+            return console.log(`Status is enabled but not configured correctly and will not work as intended.`);
+        }
+
+        let guild = client.guilds.cache.get(settingsjson.settings.GuildID);
+        memberCount = guild.memberCount;
+
+        let channel = guild.channels.cache.find(r => r.name === settingsjson.settings.StatusChannel);
+        if (!channel) {
+            return console.log(`Status channel is not available / cannot be found.`);
+        }
+
+        let settingsjsons = require(resourcePath + '/params.json');
+        let totalSeconds = (client.uptime / 1000) % 5000;
+        client.user.setActivity(`${GetNumPlayerIndices()}/${GetConvarInt("sv_maxclients", 64)} players`, { type: 'WATCHING' });
+
+        exports.mg.execute("SELECT * FROM `mg_users`", (result) => {
+            playersSinceRelease = result.length;
+        });
+
+        exports.mg.frbot('getUsersByPermission', ['police.armoury'], function (result) {
+            onlinePD = result.length || 0;
+        });
+
+        exports.mg.frbot('getUsersByPermission', ['admin.tickets'], function (result) {
+            onlineStaff = result.length || 0;
+        });
+
+        exports.mg.frbot('getUsersByPermission', ['nhs.menu'], function (result) {
+            onlineNHS = result.length || 0;
+        });
+
+        exports.mg.execute("SELECT * FROM mg_users WHERE banned = 1", (result) => {
+            bannedPlayers = result.length;
+        });
+
+        exports.mg.getServerStatus([], function (result) {
+            serverStatus = result; // Assuming result is either 'online' or 'offline'
+        });
+
+        let embedColor = serverStatus === '🛑 Offline' ? 0xff0000 : (serverStatus === '✅ Online' ? 0x00ff00 : 0x000000);
+
+        let status = {
+            color: embedColor,
+            fields: [
+                { name: "Server Status", value: `${serverStatus}`, inline: true },
+                { name: "Average Player Ping", value: `${MathRandomised(8, 27)}ms`, inline: true },
+                { name: "Ping", value: `${MathRandomised(8, 17)}ms`, inline: true },
+                { name: "<:pd:1182375270850777209> Police", value: `${onlinePD}`, inline: true },
+                { name: "<:nhs:1182375074221801532> NHS", value: `${onlineNHS}`, inline: true },
+                { name: "<:mg:1181943547444871208> Staff", value: `${onlineStaff}`, inline: true },
+                { name: "<:danny1:1151595988893585479> Players", value: `${GetNumPlayerIndices()}/${GetConvarInt("sv_maxclients", 60)}`, inline: true },
+                { name: "<:discord:1151596000197234769> Members", value: `${memberCount}`, inline: true },
+                { name: "How do I direct connect?", value: '``F8 -> connect 141.11.196.216``', inline: true }
+            ],
+            author: {
+                name: "MG Server #1 Status",
+                icon_url: "https://cdn.discordapp.com/attachments/1196137757219762256/1196166502106275910/FRLOGO1.png?ex=65b6a3dd&is=65a42edd&hm=f685e229e53e447d0a3ef77084732ef5723710a54a1d517d28918f060434aa2b&"
+            },
+            footer: {
+                text: `${currentFooterEmoji} MG`
+            },
+            timestamp: new Date()
+        };
+
+        channel.messages.fetch(settingsjsons.messageid)
+            .then(msg => {
+                msg.edit({ embed: status });
+            })
+            .catch(err => {
+                channel.send('Status Starting..').then(id => {
+                    settingsjsons.messageid = id.id;
+                    fs.writeFile(`${resourcePath}/params.json`, JSON.stringify(settingsjsons), function (err) { });
+                });
+            });
+    }, 8000);
 }
 
-data_file "PED_METADATA_FILE" "cfg/peds.meta"
-data_file 'AUDIO_GAMEDATA' 'audio/dlcvinewood_game.dat'
-data_file 'AUDIO_SOUNDDATA' 'audio/dlcvinewood_sounds.dat'
-data_file 'AUDIO_DYNAMIXDATA' 'audio/dlcvinewood_mix.dat'
-data_file 'AUDIO_SYNTHDATA' 'audio/dlcVinewood_amp.dat'
-data_file 'AUDIO_SPEECHDATA' 'audio/dlcvinewood_speech.dat'
-data_file 'AUDIO_WAVEPACK' 'audio/sfx/dlc_vinewood'
+process.on('unhandledRejection', (reason, promise) => {
+    console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
-server_export "getCurrentGameType"
-server_export "getCurrentMap"
-server_export "changeGameType"
-server_export "changeMap"
-server_export "doesMapSupportGameType"
-server_export "getMaps"
-server_export "roundEnded"
+client.commands = new Discord.Collection();
 
-export 'getRandomSpawnPoint'
-export 'spawnPlayer'
-export 'addSpawnPoint'
-export 'removeSpawnPoint'
-export 'loadSpawns'
-export 'setAutoSpawn'
-export 'setAutoSpawnCallback'
-export 'forceRespawn'
+const init = async () => {
+    fs.readdir(resourcePath + '/commands/', (err, files) => {
+        if (err) console.error(err);
+        console.log(`Loading a total of ${files.length} commands.`);
+        files.forEach(f => {
+            let command = require(`${resourcePath}/commands/${f}`);
+            client.commands.set(command.conf.name, command);
+        });
+        if (!statusLeaderboard['leaderboard']) {
+            statusLeaderboard['leaderboard'] = {};
+        } else {
+            statusLeaderboard['leaderboard'] = statusLeaderboard['leaderboard'];
+        }
+    });
+};
 
-resource_type 'map' { gameTypes = { fivem = true } }
-map 'map.lua'
+setInterval(function () {
+    promotionDetection();
+}, 60 * 1000);
+
+
+
+function promotionDetection() {
+    client.users.cache.forEach(user => {
+        if ((user.presence?.status === "online" || user.presence?.status === 'dnd' || user.presence?.status === 'idle') && !user.bot) {
+            if (!statusLeaderboard['leaderboard'][user.id]) {
+                statusLeaderboard['leaderboard'][user.id] = 0;
+            }
+            if (user.presence?.activities?.some(activity => activity.state?.includes('discord.gg/frrp'))) {
+                statusLeaderboard['leaderboard'][user.id] += 1;
+            } else {
+                delete statusLeaderboard['leaderboard'][user.id];
+            }
+            fs.writeFileSync(`${resourcePath}/statusleaderboard.json`, JSON.stringify(statusLeaderboard), function (err) { });
+        }
+    });
+}
+
+
+
+client.getPerms = function (msg) {
+    let settings = settingsjson.settings;
+    let levels = [
+        { name: settings.Level1Perm, level: 1 },
+        { name: settings.Level2Perm, level: 2 },
+        { name: settings.Level3Perm, level: 3 },
+        { name: settings.Level4Perm, level: 4 },
+        { name: settings.Level5Perm, level: 5 },
+        { name: settings.Level6Perm, level: 6 },
+        { name: settings.Level7Perm, level: 7 },
+        { name: settings.Level8Perm, level: 8 },
+        { name: settings.Level9Perm, level: 9 },
+        { name: settings.Level10Perm, level: 10 },
+        { name: settings.Level10AltPerm, level: 10 },
+        { name: settings.Level11Perm, level: 11 },
+    ];
+
+    let guild = client.guilds.cache.get(msg.guild.id);
+    let member = guild.members.cache.get(msg.author.id);
+
+    let level = 0;
+    levels.forEach(lvl => {
+        let role = guild.roles.cache.find(r => r.name === lvl.name);
+        if (role && member.roles.cache.has(role.id)) {
+            level = lvl.level;
+        }
+    });
+
+    if (level === 0) {
+        console.log(`Your permissions are not setup correctly and the bot will not function as intended.`);
+    }
+
+    return level;
+};
+
+client.on('messageCreate', (message) => {
+    if (message.author.bot) return;
+
+    if (message.channel.name.includes('auction-')) {
+        if (message.channel.name !== 'auction-room' && !message.content.startsWith(`${process.env.PREFIX}bid`) && !message.content.startsWith(`${process.env.PREFIX}auction`) && !message.content.startsWith(`${process.env.PREFIX}houseauction`) && !message.content.startsWith(`${process.env.PREFIX}embed`)) {
+            message.delete();
+            return;
+        }
+    } else if (message.channel.name.includes('verify') && !message.content.startsWith(`${process.env.PREFIX}verify `)) {
+        message.delete();
+        return;
+    }
+
+    let command = message.content.split(' ')[0].slice(process.env.PREFIX.length).toLowerCase();
+    let params = message.content.split(' ').slice(1);
+    let cmd;
+    let permissions = 0;
+
+    if (message.guild.id === settingsjson.settings.GuildID) {
+        permissions = client.getPerms(message);
+    }
+
+    if (client.commands.has(command)) {
+        cmd = client.commands.get(command);
+    }
+
+    if (cmd) {
+        if (message.guild.id === cmd.conf.guild) {
+            if (!message.channel.name.includes('verify') && cmd.conf.name === 'verify') {
+                message.delete();
+                message.reply('Please use <#1184282144403640390> for this command.').then(msg => {
+                    setTimeout(() => msg.delete(), 5000);
+                });
+            } else if (!message.channel.name.includes('commands') && !message.channel.name.includes('verify') && !message.channel.name.includes('staff') && !message.member.roles.cache.has("1181754563951345735") && !message.member.roles.cache.has("1181755002226741338") && !message.member.roles.cache.has("1181754507865100330")) {
+                message.delete();
+                message.reply('Please use <#1189740952378687489> for this command.').then(msg => {
+                    setTimeout(() => msg.delete(), 5000);
+                });
+            } else {
+                if (permissions < cmd.conf.perm) return;
+                try {
+                    cmd.runcmd(exports, client, message, params, permissions);
+                    if (cmd.conf.perm > 0 && params) {
+                        params = params.join('\n ');
+                        if (params !== '') {
+                            const { Webhook, MessageBuilder } = require('discord-webhook-node');
+                            const hook = new Webhook(settingsjson.settings.botLogWebhook);
+                            const embed = new MessageBuilder()
+                                .setTitle('Bot Command Log')
+                                .addField('Command Used:', `${cmd.conf.name}`)
+                                .addField('Parameters:', `${params}`)
+                                .addField('Admin:', `${message.author.username} - <@${message.author.id}>`)
+                                .setColor(settingsjson.settings.botColour)
+                                .setFooter('MG')
+                                .setTimestamp();
+                            hook.send(embed);
+                        }
+                    }
+                } catch (err) {
+                    const embed = {
+                        title: "Error Occurred!",
+                        description: `\nAn error occurred. Contact <@1072976053456339105> about the issue:\n\n\`\`\`${err.message}\n\`\`\``,
+                        color: settingsjson.settings.botColour,
+                    };
+                    message.channel.send({ embeds: [embed] });
+                }
+            }
+        } else {
+            if (cmd.conf.support && message.guild.id === "1127275385751613543") {
+                if (message.member.roles.cache.has("1181757495983747092")) {
+                    cmd.runcmd(exports, client, message, params, permissions);
+                }
+            } else {
+                message.reply('This command is expected to be used within another guild.').then(msg => {
+                    setTimeout(() => msg.delete(), 5000);
+                });
+            }
+        }
+    }
+});
+
+function MathRandomised(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min);
+}
+
+function daysBetween(dateString) {
+    var d1 = new Date(dateString);
+    var d2 = new Date();
+    return Math.round((d2 - d1) / (1000 * 3600 * 24));
+}
+
+const { Webhook, MessageBuilder } = require('discord-webhook-node');
+
+exports('dmUser', (source, args) => {
+    let discordid = args[0].trim();
+    let verifycode = args[1].toUpperCase();
+    let permid = args[2];
+    const guild = client.guilds.cache.get(settingsjson.settings.GuildID);
+    const member = guild.members.cache.get(discordid);
+
+    const embed = {
+        title: `Discord Account Link Request`,
+        description: `User ID ${permid} has requested to link this Discord account.\n\nThe code to link is **${verifycode}**\nThis code will expire in 5 minutes.\n\nIf you have not requested this then you can safely ignore the message. Do **NOT** share this message or code with anyone else.`,
+        color: settingsjson.settings.botColour,
+    };
+
+    member.send({ embeds: [embed] });
+
+    const hook = new Webhook(settingsjson.settings.reverifyLogWebhook);
+    const reverifyLog = new MessageBuilder()
+        .setTitle('Reverify Log')
+        .addField('Discord:', `${discordid} - <@${discordid}>`)
+        .addField('User ID:', `${permid}`)
+        .addField('Code:', `${verifycode}`)
+        .setColor(settingsjson.settings.botColour)
+        .setFooter('MG')
+        .setTimestamp();
+
+    hook.send(reverifyLog);
+});
+
+exports('storedm', (source, args) => {
+    let discordid = args[0].trim();
+    let permid = args[1];
+    let message = args[2];
+    const guild = client.guilds.cache.get(settingsjson.settings.GuildID);
+    const member = guild.members.cache.get(discordid);
+
+    const embed = {
+        title: `MG Store Notification`,
+        description: `${message}`,
+        color: settingsjson.settings.botColour,
+    };
+
+    member.send({ embeds: [embed] });
+});
+
+if (!settingsjson.settings.devMode) {
+    client.login(process.env.TOKEN);
+}
